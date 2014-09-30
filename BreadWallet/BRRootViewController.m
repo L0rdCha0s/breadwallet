@@ -104,12 +104,20 @@
     BRWalletManager *m = [BRWalletManager sharedInstance];
 
     self.urlObserver =
-        [[NSNotificationCenter defaultCenter] addObserverForName:BRURLNotification object:nil queue:nil
-        usingBlock:^(NSNotification *note) {
-            self.url = note.userInfo[@"url"];
-            [self.pageViewController setViewControllers:@[self.sendViewController]
-             direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:nil];
-        }];
+    [[NSNotificationCenter defaultCenter] addObserverForName:BRURLNotification object:nil queue:nil
+          usingBlock:^(NSNotification *note) {
+              self.url = note.userInfo[@"url"];
+              
+              if ([[self.url host] isEqual:@"x-callback-url/sendcamera"])
+              {
+                  [self.sendViewController scanQR: nil];
+              }
+              else
+              {
+                  [self.pageViewController setViewControllers:@[self.sendViewController]
+                                                    direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:nil];
+              }
+          }];
 
     self.fileObserver =
         [[NSNotificationCenter defaultCenter] addObserverForName:BRFileNotification object:nil queue:nil

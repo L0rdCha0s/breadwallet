@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6245" systemVersion="14A361p" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" initialViewController="M4Y-Lb-cyx">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6238"/>
+    </dependencies>
+    <scenes>
+        <!--Today View Controller-->
+        <scene sceneID="cwh-vc-ff4">
+            <objects>
+                <viewController id="M4Y-Lb-cyx" customClass="TodayViewController" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="Ft6-oW-KC0"/>
+                        <viewControllerLayoutGuide type="bottom" id="FKl-LY-JtV"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" simulatedAppContext="notificationCenter" id="S3S-Oj-5AN">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="37"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="icon180.png" translatesAutoresizingMaskIntoConstraints="NO" id="b50-jl-1Bq">
+                                <rect key="frame" x="39" y="0.0" width="40" height="37"/>
+                            </imageView>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SJv-I5-2Lj">
+                                <rect key="frame" x="0.0" y="4" width="320" height="30"/>
+                                <state key="normal" title="Send Bitcoin">
+                                    <color key="titleColor" red="0.83529411760000005" green="0.81960784310000001" blue="0.80000000000000004" alpha="1" colorSpace="calibratedRGB"/>
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="pressedStartWallet:" destination="M4Y-Lb-cyx" eventType="touchUpInside" id="Cex-ZA-Ggi"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                    </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
+                    <nil key="simulatedStatusBarMetrics"/>
+                    <nil key="simulatedTopBarMetrics"/>
+                    <nil key="simulatedBottomBarMetrics"/>
+                    <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+                    <size key="freeformSize" width="320" height="37"/>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="vXp-U4-Rya" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="516" y="284.5"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="icon180.png" width="180" height="180"/>
+    </resources>
+    <simulatedMetricsContainer key="defaultSimulatedMetrics">
+        <simulatedStatusBarMetrics key="statusBar"/>
+        <simulatedOrientationMetrics key="orientation"/>
+        <simulatedScreenMetrics key="destination" type="retina4"/>
+    </simulatedMetricsContainer>
+</document>
