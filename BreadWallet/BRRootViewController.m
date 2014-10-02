@@ -53,8 +53,6 @@
 @property (nonatomic, strong) BRBubbleView *tipView;
 @property (nonatomic, assign) BOOL appeared, showTips, inNextTip;
 @property (nonatomic, strong) Reachability *reachability;
-@property (nonatomic, strong) NSURL *url;
-@property (nonatomic, strong) NSData *file;
 @property (nonatomic, strong) id urlObserver, fileObserver, foregroundObserver, backgroundObserver, balanceObserver;
 @property (nonatomic, strong) id reachabilityObserver, syncStartedObserver, syncFinishedObserver, syncFailedObserver;
 @property (nonatomic, assign) NSTimeInterval timeout, start;
@@ -104,39 +102,40 @@
     BRWalletManager *m = [BRWalletManager sharedInstance];
 
     self.urlObserver =
-    [[NSNotificationCenter defaultCenter] addObserverForName:BRURLNotification object:nil queue:nil
-          usingBlock:^(NSNotification *note) {
-              self.url = note.userInfo[@"url"];
-              
-              if ([[self.url host] isEqual:@"x-callback-url/sendcamera"])
-              {
-                  [self.sendViewController scanQR: nil];
-              }
-              else
-              {
-                  [self.pageViewController setViewControllers:@[self.sendViewController]
-                                                    direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:nil];
-              }
-          }];
+        [[NSNotificationCenter defaultCenter] addObserverForName:BRURLNotification object:nil queue:nil
+        usingBlock:^(NSNotification *note) {            
+            if ([[note.userInfo[@"url"] host] isEqual:@"x-callback-url/scanqr"])
+            {
+                [self.sendViewController scanQR: nil];
+            }
+            else
+            {
+                BRSendViewController *c = self.sendViewController;
+            
+                [self.pageViewController setViewControllers:@[c] direction:UIPageViewControllerNavigationDirectionForward
+                 animated:NO completion:^(BOOL finished) { [c handleURL:note.userInfo[@"url"]]; }];
+            }
+        }];
 
     self.fileObserver =
         [[NSNotificationCenter defaultCenter] addObserverForName:BRFileNotification object:nil queue:nil
         usingBlock:^(NSNotification *note) {
-            self.file = note.userInfo[@"file"];
-            [self.pageViewController setViewControllers:@[self.sendViewController]
-             direction:UIPageViewControllerNavigationDirectionForward animated:NO completion:nil];
+            BRSendViewController *c = self.sendViewController;
+
+            [self.pageViewController setViewControllers:@[c] direction:UIPageViewControllerNavigationDirectionForward
+             animated:NO completion:^(BOOL finished) { [c handleFile:note.userInfo[@"file"]]; }];
         }];
 
     self.foregroundObserver =
         [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillEnterForegroundNotification object:nil
         queue:nil usingBlock:^(NSNotification *note) {
             if (self.appeared && m.wallet) {
-                if (self.navigationController.presentedViewController) {
-                    [self.navigationController dismissViewControllerAnimated:NO completion:^{
-                        //TODO: XXXX require auth
-                    }];
-                }
-//                else //TODO: XXXX require auth
+//                if (self.navigationController.presentedViewController) {
+//                    [self.navigationController dismissViewControllerAnimated:YES completion:^{
+//                        //TODO: XXXX require auth
+//                    }];
+//                }
+////                else //TODO: XXXX require auth
 
                 [[BRPeerManager sharedInstance] connect];
             }
@@ -166,21 +165,19 @@
             if (self.appeared && m.wallet) {
 
                 if (self.navigationController.presentedViewController) {
-                    [self.navigationController dismissViewControllerAnimated:NO completion:^{
+                    [self.navigationController dismissViewControllerAnimated:YES completion:^{
                         //TODO: XXXX lock down app
                     }];
                 }
 //                else //TODO: XXXX lock down app
             }
-
-            self.url = nil;
-            self.file = nil;
         }];
 
     self.reachabilityObserver =
         [[NSNotificationCenter defaultCenter] addObserverForName:kReachabilityChangedNotification object:nil queue:nil
         usingBlock:^(NSNotification *note) {
-            if (self.appeared && self.reachability.currentReachabilityStatus != NotReachable) {
+            if (self.appeared && self.reachability.currentReachabilityStatus != NotReachable &&
+                [[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground) {
                 [[BRPeerManager sharedInstance] connect];
             }
             else if (self.appeared && self.reachability.currentReachabilityStatus == NotReachable) [self showErrorBar];
@@ -288,7 +285,10 @@
 
     self.navigationItem.leftBarButtonItem.image = [UIImage imageNamed:@"burger"];
     self.pageViewController.view.alpha = 1.0;
-    [[BRPeerManager sharedInstance] connect];
+
+    if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground) {
+        [[BRPeerManager sharedInstance] connect];
+    }
 
     //TODO: try making the balance start at zero and quickly increase to the actual balance, ala city guides
 
@@ -316,10 +316,6 @@
     if (self.navigationController.visibleViewController == self) {
         [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleDefault animated:YES];
         [[UIApplication sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationFade];
-        if (self.url) [self.sendViewController handleURL:self.url];
-        if (self.file) [self.sendViewController handleFile:self.file];
-        self.url = nil;
-        self.file = nil;
 
         if (self.showTips) [self performSelector:@selector(tip:) withObject:nil afterDelay:0.3];
         [self showBackupDialogIfNeeded];
@@ -727,7 +723,7 @@ viewControllerAfterViewController:(UIViewController *)viewController
             }
 
             if (self.progress.progress > 0) self.progress.hidden = self.pulse.hidden = NO;
-            [transitionContext completeTransition:finished];
+            [transitionContext completeTransition:YES];
         }];
     }
     else if ([to isKindOfClass:[UINavigationController class]] && from == self.navigationController) { // modal display
@@ -761,11 +757,13 @@ viewControllerAfterViewController:(UIViewController *)viewController
                 [NSString stringWithFormat:@"%@ (%@)", [m stringForAmount:m.wallet.balance],
                  [m localCurrencyStringForAmount:m.wallet.balance]];
             [v addSubview:to.view];
-            [transitionContext completeTransition:finished];
+            [transitionContext completeTransition:YES];
         }];
     }
     else if ([from isKindOfClass:[UINavigationController class]] && to == self.navigationController) { // modal dismiss
-        [[BRPeerManager sharedInstance] connect];
+        if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground) {
+            [[BRPeerManager sharedInstance] connect];
+        }
         
         [self.navigationController.navigationBar.superview insertSubview:from.view
          belowSubview:self.navigationController.navigationBar];
@@ -788,7 +786,7 @@ viewControllerAfterViewController:(UIViewController *)viewController
             [from.view removeFromSuperview];
             self.burger.hidden = YES;
             self.navigationItem.leftBarButtonItem.image = [UIImage imageNamed:@"burger"];
-            [transitionContext completeTransition:finished];
+            [transitionContext completeTransition:YES];
             if (self.reachability.currentReachabilityStatus == NotReachable) [self showErrorBar];
         }];
     }
